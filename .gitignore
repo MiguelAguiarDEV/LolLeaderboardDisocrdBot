@@ -1,0 +1,24 @@
+# Información confidencial
+.env
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos generados automáticamente
+players.json
+
+# Archivos de entornos virtuales
+venv/
+
+# Configuraciones locales
+.vscode/
+.idea/
+
+# Archivos temporales del sistema
+*.DS_Store
+Thumbs.db
+
+# Archivos de prueba
+test.py
