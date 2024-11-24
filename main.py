@@ -45,32 +45,55 @@ async def add_player(interaction: discord.Interaction, player_tag: str):
 
 @bot.tree.command(name="leaderboard", description="Muestra la lista de jugadores registrados y sus estadísticas.")
 async def leaderboard(interaction: discord.Interaction):
-    """Muestra la leaderboard con rangos, LP, victorias, derrotas y win rate"""
-
-    # Diferir la respuesta para evitar el timeout de 3 segundos
-    await interaction.response.defer()
+    """Muestra la leaderboard ordenada con rangos, LP, victorias, derrotas y win rate."""
+    await interaction.response.defer()  # Diferir la respuesta
 
     if not players:
         await interaction.followup.send("No hay jugadores registrados aún.", ephemeral=True)
         return
 
-    leaderboard_message = "**Leaderboard:**\n"
-    print(players)
+    leaderboard_data = []
+
+    # Recopilar datos
     for player_tag in players.keys():
         rank_data = get_player_rank(player_tag)
-        print(player_tag)
         if rank_data:
-            leaderboard_message += (
-                f"\n{player_tag} - {rank_data['tier']} "
-                f"con {rank_data['lp']}\n"
-                f"Estadísticas: {rank_data['win_lose']} ({rank_data['win_rate']})\n"
-            )
-
+            leaderboard_data.append({
+                "name": player_tag,
+                "url": f"<https://www.op.gg/summoners/euw/{player_tag.replace(' ', '-').replace('#', '-')}>",  # Enlace sin preview
+                "tier": rank_data["tier"],
+                "lp": int(rank_data["lp"].split()[0]) if rank_data["lp"].split()[0].isdigit() else 0,
+                "win_rate": rank_data["win_rate"],
+                "wins": rank_data["win_lose"].split("W")[0],
+                "losses": rank_data["win_lose"].split("W")[1].replace("L", "").strip()
+            })
         else:
-            leaderboard_message += f"{player_tag} - No se pudo obtener información.\n"
+            leaderboard_data.append({
+                "name": player_tag,
+                "url": f"<https://www.op.gg/summoners/euw/{player_tag.replace(' ', '-').replace('#', '-')}>",
+                "tier": "No Rank",
+                "lp": 0,
+                "win_rate": "Win rate 0%",
+                "wins": "0",
+                "losses": "0"
+            })
 
-    # Enviar el mensaje final como seguimiento
+    # Ordenar por LP
+    leaderboard_data.sort(key=lambda x: (-x["lp"], x["tier"]))
+
+    # Generar mensaje
+    leaderboard_message = "**🏆 Leaderboard:**\n\n"
+    for idx, player in enumerate(leaderboard_data, start=1):
+        leaderboard_message += (
+            f"{idx}. [{player['name']}]({player['url']}) - **{player['tier']}** con **{player['lp']} LP**\n"
+            f"   Estadísticas: 🟢 **{player['wins']}W** 🔴 **{player['losses']}L** "
+            f"(**{player['win_rate']}**)\n\n"
+        )
+
+    # Enviar respuesta
     await interaction.followup.send(leaderboard_message)
+
+
 
 
 bot.run(TOKEN)
